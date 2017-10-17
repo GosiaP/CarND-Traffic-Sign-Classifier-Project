@@ -224,4 +224,4 @@ Here the results of prediction.
 
 Prediction of images 1, 2, 4, 5 was correct. Prediction of image 3 - Double curve - was not correct.  The Double curve was predicted as Dangerous curve to the left - it is interesting but somehow explainable. Both of traffic signs have same form, similar color palette and the symbol of dangerous curve left is part of symbol for double curve.
 
-
+That's it.
