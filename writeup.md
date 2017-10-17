@@ -1,6 +1,6 @@
-#**Traffic Sign Recognition** 
+# Traffic Sign Recognition
 
-##**Build a Traffic Sign Recognition Project**
+## Build a Traffic Sign Recognition Project
 
 The goals / steps of this project are the following:
 * Load the data set (see below for links to the project data set)
@@ -13,23 +13,25 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 
-[image1]: ./plots/Train_data_before.png  "Train data before"
-[image2]: ./examples/grayscale.jpg "Grayscaling"
-[image3]: ./examples/random_noise.jpg "Random Noise"
-[image4]: ./examples/placeholder.png "Traffic Sign 1"
-[image5]: ./examples/placeholder.png "Traffic Sign 2"
-[image6]: ./examples/placeholder.png "Traffic Sign 3"
-[image7]: ./examples/placeholder.png "Traffic Sign 4"
-[image8]: ./examples/placeholder.png "Traffic Sign 5"
-[image9]: ./examples/train_and_preprocessed_samples.png "train_and_preprocessed"
+[image1]: ./plots/Train_data_before.png "Train data before"
+[image2]: ./plots/Train_data_after.png "Train data after"
+[image3]: ./plots/learning_curve.png "Learning curve"
+[image4]: ./web_img/00.jpg "Traffic Sign 1"
+[image5]: ./web_img/12.jpg "Traffic Sign 2"
+[image6]: ./web_img/21.jpg "Traffic Sign 3"
+[image7]: ./web_img/22.jpg "Traffic Sign 4"
+[image8]: ./web_img/38.jpg "Traffic Sign 5"
+[image10]: ./examples/dangerous_curve_left.jpg  "Traffic Sign 6"
+examples\dengerous_curve_left.jpg
+[image9]: ./examples/train_and_preprocessed_samples.jpg "Train_and_preprocessed"
 
 ## Rubric Points
 Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/481/view) individually and describe how I addressed each point in my implementation.
-The implementation and the project writeup can be found [project code](https://github.com/udacity/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb) to my project code  
+The implementation and the project writeup can be found [project code](https://github.com/GosiaP/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb) to my project code
 
-###Data Set Summary & Exploration
+### Data Set Summary & Exploration
 
-####1. Provide a basic summary of the data set. 
+#### 1. Provide a basic summary of the data set.
 Below a statistic of the traffic signs data set calculated numpy library:
 
 * The size of training set is 34799 samples
@@ -38,121 +40,188 @@ Below a statistic of the traffic signs data set calculated numpy library:
 * The shape of a traffic sign image is 32x32 (RGB)
 * The number of unique classes/labels in the data set is 43
 
-####2. Include an exploratory visualization of the dataset.
+#### 2. Include an exploratory visualization of the data set.
 
-Here is an exploratory visualization of the data set. It is a bar chart showing how the data ...
+Here is an exploratory visualization of the data set. It is a bar chart showing how the data is distributed across the different labels.
 
 ![Before][image1]
 
-###Design and Test a Model Architecture
+Below my observation:
+* Looking at this chart it was very clear for me that some of types of traffic signs have more samples as others - even 10 times more. It means I have to extend the data set by creation of some faked data - as suggested in the lecture.
+* Also the samples are sorted by class in data set what is a clear hint for me to that I have to shuffle them during of training.
+* You can find some samples of signs in chapter "Exploratory visualization of the data set" in my [project](https://github.com/GosiaP/CarND-Traffic-Sign-Classifier-Project/blob/master/Traffic_Sign_Classifier.ipynb) .
 
-####1. Describe how you preprocessed the image data. What techniques were chosen and why did you choose these techniques? Consider including images showing the output of each preprocessing technique. Pre-processing refers to techniques such as converting to grayscale, normalization, etc. (OPTIONAL: As described in the "Stand Out Suggestions" part of the rubric, if you generated additional data for training, describe why you decided to generate additional data, how you generated the data, and provide example images of the additional data. Then describe the characteristics of the augmented training set like number of images in the set, number of images for each class, etc.)
+### Design and Test a Model Architecture
 
-As a first step, I decided to convert the images to grayscale because ...
+#### Question 1
+_Describe how you preprocessed the image data. What techniques were chosen and why did you choose them_
 
-Here is an example of a traffic sign image before and after grayscaling.
+Preprocessing of the image is done in following steps:
+* conversion of the image to YUV color space as suggested in the [paper](http://yann.lecun.com/exdb/publis/pdf/sermanet-ijcnn-11.pdf). I didn't even tried to convert the image to grayscale. I learned in the previous project that this transformation doesn't bring good effect in image processing. Finally I decided to use only Y channel as in some preliminary experiments full color images seem to confuse the classifier (as also reported in the paper).
+* intensity normalization to achieve mean of image around 0.
+* improve contrast of the image using of adaptive histogram equalization [CLAHE](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization)
 
-![alt text][image2]
+Here a sample of final image preprocessing (they don't matched 1:1 as they are created randomly):
 
-As a last step, I normalized the image data because ...
-
-I decided to generate additional data because ... 
-
-To add more data to the the data set, I used the following techniques because ... 
-
-Here is an example of an original image and an augmented image:
-
-![alt text][image3]
-
-The difference between the original data set and the augmented data set is the following ... 
+![Preproc][image9]
 
 
-####2. Describe what your final model architecture looks like including model type, layers, layer sizes, connectivity, etc.) Consider including a diagram and/or table describing the final model.
+#### Question 2
+_Describe how you set up the training, validation and testing data for your model. Optional: If you generated additional data, how did you generate the data? Why did you generate the data? What are the differences in the new dataset (with generated data) from the original data set?_
 
-My final model consisted of the following layers:
+As the samples of signs are not distributed in sign classes uniformly I decided to add some faked images to achieve more uniformly number of sign per class.
+I achieved it by calculation of number of operations required for particular image class:
+* num_images - number if images in the calss the image belongs to
+* num_to_generate = max_uniques_count - num_images, where max_uniques_count is the largest number of images in one class
+* num_operations = num_to_generate // num_images
+
+The _num_operations_ was the number of faked images I had to create.
+I applied following image transformation (choosed randomly) to create faked images:
+* rotation left/right about some angle
+* scaling up/down
+* horizontal motion blur of the image
+
+The result of the transformation are shown in my project in chapter in chapter "Exploratory visualization of the data set".
+Distribution of images per classes was not perfect but clearly better. See bulk chart below.
+
+![After][image2]
+
+#### Question 3
+_Describe what your final model architecture looks like._
+
+As suggested in the lecture I used LeNet-5 architecture. I added a dropout to prevent over fitting.
+
 
 | Layer         		|     Description	        					| 
 |:---------------------:|:---------------------------------------------:| 
-| Input         		| 32x32x3 RGB image   							| 
-| Convolution 3x3     	| 1x1 stride, same padding, outputs 32x32x64 	|
+| Input         		| 32x32x1 (Y channel image)  			    	|
+| Convolution 5x5     	| 1x1 stride, valid padding, outputs 28x28x6	|
 | RELU					|												|
 | Max pooling	      	| 2x2 stride,  outputs 16x16x64 				|
-| Convolution 3x3	    | etc.      									|
-| Fully connected		| etc.        									|
-| Softmax				| etc.        									|
-|						|												|
-|						|												|
- 
+| Convolution 5x5	    | 1x1 stride, valid padding, outputs 14x14x6    |
+| RELU					|												|
+| Max pooling	      	| 2x2 stride,  outputs 5x5x16.			        |
+| Fully Connected       | Input 400, output 120.                        |
+| RELU					|												|
+| Droput	      	    | keep probability 0.7				            |
+| Fully connected		| input 120, output  84.       			        |
+| RELU					|												|
+| Droput	      	    | keep probability 0.7				            |
+| Softmax				|          									    |
 
+#### Question 4
+_How did you train your model?_
 
-####3. Describe how you trained your model. The discussion can include the type of optimizer, the batch size, number of epochs and any hyperparameters such as learning rate.
+To train the model, I used:
+* Adam Optimizer
+* learning rate = 0.001
+* dropout rate of 0.3
+* batch size of 128
+* number of epochs = 20
 
-To train the model, I used an ....
+#### Question 5
+_Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem._
 
-####4. Describe the approach taken for finding a solution and getting the validation set accuracy to be at least 0.93. Include in the discussion the results on the training, validation and test sets and where in the code these were calculated. Your approach may have been an iterative process, in which case, outline the steps you took to get to the final solution and why you chose those steps. Perhaps your solution involved an already well known implementation or architecture. In this case, discuss why you think the architecture is suitable for the current problem.
+To train the model, I used a LeNet-5 architecture as suggested in the lecture. First I didn't used a droput and I started with only 10 epochs. I realized that the model tended to overfit. So added two dropout with rate 0.3 and increase the numbers of epochs to 20. As I installed Tensor Flow with GPU and I have pretty good GPU, the training of data set took me 15 minutes.
+
+Training curves can be seen below.
+
+![Learning][image3]
 
 My final model results were:
-* training set accuracy of ?
-* validation set accuracy of ? 
-* test set accuracy of ?
+* training set accuracy of 99%
+* validation set accuracy of 97%
+* test set accuracy of 95%
 
-If an iterative approach was chosen:
-* What was the first architecture that was tried and why was it chosen?
-* What were some problems with the initial architecture?
-* How was the architecture adjusted and why was it adjusted? Typical adjustments could include choosing a different model architecture, adding or taking away layers (pooling, dropout, convolution, etc), using an activation function or changing the activation function. One common justification for adjusting an architecture would be due to overfitting or underfitting. A high accuracy on the training set but low accuracy on the validation set indicates over fitting; a low accuracy on both sets indicates under fitting.
-* Which parameters were tuned? How were they adjusted and why?
-* What are some of the important design choices and why were they chosen? For example, why might a convolution layer work well with this problem? How might a dropout layer help with creating a successful model?
+### Test a Model on New Images
 
-If a well known architecture was chosen:
-* What architecture was chosen?
-* Why did you believe it would be relevant to the traffic sign application?
-* How does the final model's accuracy on the training, validation and test set provide evidence that the model is working well?
- 
-
-###Test a Model on New Images
-
-####1. Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify.
+#### Question 1
+_Choose five German traffic signs found on the web and provide them in the report. For each image, discuss what quality or qualities might be difficult to classify._
 
 Here are five German traffic signs that I found on the web:
 
-![alt text][image4] ![alt text][image5] ![alt text][image6] 
-![alt text][image7] ![alt text][image8]
+| Sign class            |     Web Image           |
+|:---------------------:|:-----------------------:|
+| Speed limit (20km/h)  | ![alt text][image4]     |
+| Priority road         | ![alt text][image5]	  |
+| Double curve			| ![alt text][image6]     |
+| Bumpy road      		| ![alt text][image7]	  |
+| Keep right			| ![alt text][image8]     |
 
-The first image might be difficult to classify because ...
+I converted these images to the size 32x32 before I started their processing.
+I don't have any feeling which the images from the set I choose can be difficult to train. So, I simply started prediction and analyzed the result of it.
 
-####2. Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set (OPTIONAL: Discuss the results in more detail as described in the "Stand Out Suggestions" part of the rubric).
+#### Question 2
+_Discuss the model's predictions on these new traffic signs and compare the results to predicting on the test set. At a minimum, discuss what the predictions were, the accuracy on these new predictions, and compare the accuracy to the accuracy on the test set._
 
 Here are the results of the prediction:
 
-| Image			        |     Prediction	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| Stop Sign      		| Stop sign   									| 
-| U-turn     			| U-turn 										|
-| Yield					| Yield											|
-| 100 km/h	      		| Bumpy Road					 				|
-| Slippery Road			| Slippery Road      							|
+| Sign class            |     Web Image           |Sign class            |     Predicted Web Image  | Probability |
+|:---------------------:|:-----------------------:|:---------------------:|:-----------------------:|:-----------:|
+| Speed limit (20km/h)  | ![alt text][image4]     |Speed limit (20km/h)  | ![alt text][image4]     | 95%          |
+| Priority road         | ![alt text][image5]	  |Speed limit (20km/h)  | ![alt text][image5]     |100%          |
+| Double curve			| ![alt text][image6]     |Dangerous curve to the left | ![alt text][image10] |98%        |
+| Bumpy road      		| ![alt text][image7]	  |Speed limit (20km/h)  | ![alt text][image7]     |100%          |
+| Keep right			| ![alt text][image8]     |Speed limit (20km/h)  | ![alt text][image8]     |100%          |
 
+The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80% which is compareable to the accuracy of test set.
+Loading of the test web images is provided in cell 34, prediction in cell 35. Calculation of Top 5 Softmax Probabilities is done in cell 36.
 
-The model was able to correctly guess 4 of the 5 traffic signs, which gives an accuracy of 80%. This compares favorably to the accuracy on the test set of ...
+#### Question 3
+_Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability._
 
-####3. Describe how certain the model is when predicting on each of the five new images by looking at the softmax probabilities for each prediction. Provide the top 5 softmax probabilities for each image along with the sign type of each probability. (OPTIONAL: as described in the "Stand Out Suggestions" part of the rubric, visualizations can also be provided such as bar charts)
+Here the results of prediction.
 
-The code for making predictions on my final model is located in the 11th cell of the Ipython notebook.
+1.Probabilities for image 'Speed limit (20km/h)' (0):
 
-For the first image, the model is relatively sure that this is a stop sign (probability of 0.6), and the image does contain a stop sign. The top five soft max probabilities were
+|     Prediction	            	| Probability        |
+|:---------------------------------:|:-----------------: |
+| Speed limit (20km/h)			    | 95%         	     |
+| Speed limit (60km/h)				| 4%     		     |
+| Speed limit (30km/h)			   	| 0%			     |
+| Speed limit (80km/h)				| 0%	      	     |
+| End of speed limit (80km/h)     	| 0%			     |
 
-| Probability         	|     Prediction	        					| 
-|:---------------------:|:---------------------------------------------:| 
-| .60         			| Stop sign   									| 
-| .20     				| U-turn 										|
-| .05					| Yield											|
-| .04	      			| Bumpy Road					 				|
-| .01				    | Slippery Road      							|
+2.Probabilities for image 'Priority road':
 
+|     Prediction	            	| Probability        |
+|:---------------------------------:|:-----------------: |
+| Priority road         		    | 100%         	     |
+| No passing        				| 0%     		     |
+| Roundabout mandatory   		   	| 0%			     |
+| No vehicles               		| 0%	      	     |
+| Ahead only                    	| 0%			     |
 
-For the second image ... 
+3.Probabilities for image 'Double curve':
 
-### (Optional) Visualizing the Neural Network (See Step 4 of the Ipython notebook for more details)
-####1. Discuss the visual output of your trained network's feature maps. What characteristics did the neural network use to make classifications?
+|     Prediction	            	| Probability        |
+|:---------------------------------:|:-----------------: |
+| Dangerous curve to the left       | 98%         	     |
+| Slippery road             		| 2%     		     |
+| Double curve              	   	| 0%			     |
+| Bicycles crossing             	| 0%	      	     |
+| Road narrows on the right     	| 0%			     |
+
+4.Probabilities for image 'Bumpy road':
+
+|     Prediction	            	| Probability        |
+|:---------------------------------:|:-----------------: |
+| Bumpy road		                | 100%         	     |
+| Bicycles crossing              	| 40%     		     |
+| Road work                     	| 0%			     |
+| Turn left ahead           		| 0%	      	     |
+| Wild animals crossing         	| 0%			     |
+
+5.Probabilities for image 'Keep right':
+
+|     Prediction	            	| Probability        |
+|:---------------------------------:|:-----------------: |
+| Keep right                	    | 100%         	     |
+| Speed limit (80km/h)          	| 0%     		     |
+| Wild animals crossing          	| 0%			     |
+| Speed limit (50km/h)      		| 0%	      	     |
+| Speed limit (30km/h)          	| 0%			     |
+
+Prediction of images 1, 2, 4, 5 was correct. Prediction of image 3 - Double curve - was not correct.  The Double curve was predicted as Dangerous curve to the left - it is interesting but somehow explainable. Both of traffic signs have same form, similar color palette and the symbol of dangerous curve left is part of symbol for double curve.
 
 
